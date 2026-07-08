@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+    <h1>📚 Assignments</h1>
+    <div class="assignment-form">
+        <form action="/add_assignments" method="POST">
+            <label>Assignment Name</label>
+            <input type="text" name="assignment_name" placeholder="Enter Assignment Name">
+            <br><br>
+            <label>Subject</label>
+            <input type="text" name="subject" placeholder="enter the subject" required>
+            <br><br>
+            <label>Date</label>
+            <input type="Date" name="due_date" required>
+            <br><br>
+            <label>Priority</label>
+            <select name="priority" required>
+                <!-- we are adding select priority so that browser cant auot  select High and user submit it. Using this user will actually choose priority-->
+                <option value="">Select Priority</option> 
+                <option value="3">High</option>
+                <option value="2">Medium</option>
+                <option value="1">Low</option>
+            </select>
+            <br><br>
+            <button type="submit" class="btn-primary">Submit</button>
+        </form>
+    </div>
+
+    <h2>Your Assignments</h2>
+    {% for assignment in assig %}
+        <div class="assignment-card">
+        <h3>{{ assignment[1] }}</h3>
+        <p><strong>Subject:</strong> {{ assignment[2] }}</p>
+        <p><strong>Due:</strong> {{ assignment[3] }}</p>
+        <p><strong>Priority:</strong>
+            {% if assignment[4] == 3 %}
+                <span class="priority-high">🔴 High</span>
+                {% elif assignment[4] == 2 %}
+                <span class="priority-medium">🟠 Medium</span>
+                {% else %}
+                <span class="priority-low">🟢 Low</span>
+            {% endif %}
+        </p>
+        <div class="task-actions">
+        <form action="/update_assignments/{{ assignment[0] }}" method="GET">
+            <button type="submit" class="btn-primary">Update</button>
+        </form>
+        <form action="/delete_assignments/{{ assignment[0] }}" method="POST">
+            <button type="submit" class="btn-danger">Delete</button>
+        </form>
+        {% if assignment[5] == 0 %}
+            <form action="/status_assignments/{{ assignment[0] }}" method="POST">
+                <button type="submit" class="btn-success">Done</button>
+            </form>
+        {% endif %}
+        </div>
+    </div>
+{% endfor %}
+
+</body>
+</html>

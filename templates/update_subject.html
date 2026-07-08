@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="form-container">
+
+    <div class="form-card">
+
+        <h1>📚 Update Subject</h1>
+
+        <p class="form-subtitle">
+            Modify subject details and save changes
+        </p>
+
+        <form action="/update_subject/{{ subject[0] }}"
+              method="POST">
+
+            <input
+                type="text"
+                name="subject_name"
+                value="{{ subject[1] }}"
+                placeholder="Enter Subject Name"
+                required
+            >
+
+            <br><br>
+
+            <input
+                type="number"
+                name="credits"
+                value="{{ subject[2] }}"
+                placeholder="Enter Credits"
+                min="1"
+                required
+            >
+
+            <br><br>
+
+            <select name="grade" required>
+
+                <option value="10" {% if subject[3] == 10 %}selected{% endif %}>
+                    S Grade
+                </option>
+
+                <option value="9" {% if subject[3] == 9 %}selected{% endif %}>
+                    A Grade
+                </option>
+
+                <option value="8" {% if subject[3] == 8 %}selected{% endif %}>
+                    B Grade
+                </option>
+
+                <option value="7" {% if subject[3] == 7 %}selected{% endif %}>
+                    C Grade
+                </option>
+
+                <option value="6" {% if subject[3] == 6 %}selected{% endif %}>
+                    D Grade
+                </option>
+
+                <option value="5" {% if subject[3] == 5 %}selected{% endif %}>
+                    E Grade
+                </option>
+
+                <option value="0" {% if subject[3] == 0 %}selected{% endif %}>
+                    F Grade
+                </option>
+
+            </select>
+
+            <br><br>
+
+            <button
+                type="submit"
+                class="btn-primary">
+                Save Changes
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Doubt Solver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='doubt_solver.css') }}">
+</head>
+
+<body>
+
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+<div class="container">
+
+    <!-- Header -->
+
+    <div class="header-card">
+
+        <h1>🤖 AI Doubt Solver</h1>
+
+        <p>
+            Ask questions from your uploaded notes.
+            Answers are generated only from your study materials.
+        </p>
+
+    </div>
+
+    <!-- Ask Question -->
+
+    <div class="question-card">
+
+        <form method="POST">
+
+            <textarea
+                name="question"
+                rows="4"
+                placeholder="Example: Explain Merge Sort with an example..."
+                required>{{ question }}</textarea>
+
+            <button type="submit" class="ask-btn"> 🔍 Ask Question </button>
+
+        </form>
+
+    </div>
+
+    <!-- Result -->
+
+    {% if answer %}
+
+        <!-- Student Question -->
+
+        <div class="question-display">
+
+            <h2>👤 Your Question</h2>
+
+            <p>{{ question }}</p>
+
+        </div>
+
+        <!-- AI Answer -->
+
+        <!-- AI Answer -->
+
+<div class="answer-card">
+
+    <h2>🤖 AI Answer</h2>
+
+    <!-- Summary -->
+
+    {% if summary %}
+
+    <div class="summary-box">
+
+        <h3>📌 Summary</h3>
+
+        <p>{{ summary }}</p>
+
+    </div>
+
+    {% endif %}
+
+    <!-- Confidence -->
+
+    {% if confidence %}
+
+        {% if confidence == "High" %}
+            <div class="confidence-box high">🟢 High Confidence</div>
+
+        {% elif confidence == "Medium" %}
+            <div class="confidence-box medium">🟡 Medium Confidence</div>
+
+        {% elif confidence == "Low" %}
+            <div class="confidence-box low">🔴 Low Confidence</div>
+        {% endif %}
+
+    {% endif %}
+
+    <!-- Detailed Answer -->
+
+    <div class="answer-text">
+
+        {{ answer|safe }}
+
+    </div>
+
+    <!-- Primary Source -->
+
+    {% if sources %}
+
+    <div class="answer-source">
+
+        📄 Primary Source:
+        <strong>{{ sources[0] }}</strong>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+        <!-- Sources -->
+
+        {% if sources %}
+
+        <div class="sources-card">
+
+            <h2>📄 Sources Used</h2>
+
+            <ul>
+
+                {% for file in sources %}
+
+                    <li>{{ file }}</li>
+
+                {% endfor %}
+
+            </ul>
+
+        </div>
+
+        {% endif %}
+
+    {% endif %}
+
+</div>
+
+<!-- Loading Overlay -->
+
+<div id="loading-overlay">
+
+    <div class="loading-box">
+
+        <div class="loader"></div>
+
+        <h2>🤖 Searching your notes...</h2>
+
+        <p>
+
+            This usually takes
+            <strong>3–10 seconds</strong>.
+
+        </p>
+
+        <small>
+
+            Please don't refresh the page.
+
+        </small>
+
+    </div>
+
+</div>
+
+<script>
+
+document.querySelector("form").addEventListener("submit", function () {
+
+    document.getElementById("loading-overlay").style.display = "flex";
+
+});
+
+</script>
+
+</body>
+
+</html>

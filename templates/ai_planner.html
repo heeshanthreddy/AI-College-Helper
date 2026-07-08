@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static',filename='ai_planner.css') }}">
+    <title>AI Planner</title>
+</head>
+<body>
+    
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+<div class="container">
+
+    <div class="planner-header">
+            <h1>🧭 AI Study Planner</h1>
+            <p>Your personalized study schedule based on your academic progress.</p>
+        <div class="header-buttons">
+            <a href="/regenerate_study_plan" class="btn-regenerate">🔄 Generate New Report</a>
+            <a href="/analytics" class="btn-back"> ← Back to Analytics</a>
+        </div>
+    </div>
+
+    <!-- Planner Mode -->
+    <div class="card">
+        <h2>🚦 Planner Mode</h2>
+        <p class="planner-mode"> {{ plan.planner_mode }} </p>
+    </div>
+
+    <!-- Coach Message -->
+    <div class="card">
+        <h2>🎙️ Coach Message</h2>
+        <p>{{ plan.coach_message }}</p>
+    </div>
+
+    <!-- Daily Missions -->
+    <div class="card">
+        <h2>🎯 Today's Missions</h2>
+
+        <ul>
+            {% for mission in plan.daily_missions %}
+                <li>{{ mission }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Schedule -->
+    <div class="card">
+        <h2>📅 Today's Schedule</h2>
+
+        {% for session in plan.schedule %}
+
+        <div class="schedule-card">
+
+            <h3>{{ session.time }}</h3>
+
+            <p><strong>📘 Activity:</strong> {{ session.activity }}</p>
+
+            <p><strong>⏳ Duration:</strong> {{ session.duration }}</p>
+
+            <p><strong>💡 Reason:</strong> {{ session.reason }}</p>
+
+        </div>
+
+        {% endfor %}
+    </div>
+
+    <!-- Tips -->
+    <div class="card">
+
+        <h2>💡 Study Tips</h2>
+
+        <ul>
+
+            {% for tip in plan.tips %}
+
+                <li>{{ tip }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    <!-- Reasoning -->
+    <div class="card">
+
+        <h2>🧩 Why This Plan?</h2>
+
+        <ul>
+
+            {% for item in plan.reasoning %}
+
+                <li>{{ item }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+</div>
+
+<div id="loading-overlay">
+
+    <div class="loading-box">
+
+        <div class="loader"></div>
+
+        <h2>🤖 AI is creating your personalized study plan...</h2>
+
+        <p>
+            This usually takes
+            <strong>5–15 seconds</strong>.
+        </p>
+
+        <small>
+            Please don't refresh the page.
+        </small>
+
+    </div>
+
+</div>
+
+<script>
+
+document.querySelector(".btn-regenerate").addEventListener("click", function(){
+
+    document.getElementById("loading-overlay").style.display = "flex";
+
+});
+
+</script>
+
+</body>
+</html>

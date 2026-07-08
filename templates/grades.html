@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grades</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+{% include "navbar.html" %}
+
+<div class="form-cgpa-container">
+<div class="semester-form">
+    <h1>GRADES CALCULATOR</h1>
+    <form action="/add_semester" method="POST">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-error">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <select name="semester_no" required>
+            <option value="">Select Semester Number</option>
+            {% for i in range(1,11) %}
+                <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+        <button type="submit" class="btn-primary">Submit</button>
+        <br><br>
+    </form>
+</div>
+
+    <div class="cgpa-card">
+        <h4>Current CGPA</h4>
+        <h1>{{ cgpa }}</h1>
+    </div>
+</div>
+
+    <h2 class="section-title">Semesters Records</h2>
+
+    {% for semester in grade %}
+        <div class="semester-card">
+
+    <div class="semester-header">
+        <h3>Semester {{ semester[1] }}</h3>
+        <span class="sgpa-badge">
+            SGPA : {{ semester_sgpa[semester[0]] }}
+        </span>
+    </div>
+
+    <div class="semester-actions">
+        <a href="/add_subject/{{ semester[0] }}" class="btn-primary">Add Subject</a>
+
+        <a href="/confirm_delete_semester/{{ semester[0] }}" class="btn-danger">Delete Semester</a>
+    </div>
+        <!-- Below i wrote on how to display the values in a dict where semester[0] acts as a key in dict -->
+    <table class="grades-table">
+    <tr>
+        <th>Subject</th>
+        <th>Credits</th>
+        <th>Grade</th>
+        <th>Actions</th>
+    </tr>
+    {% for subject in semester_subjects[semester[0]] %}
+    <tr>
+        <td>{{ subject[1] }}</td>
+        <td>{{ subject[2] }}</td>
+        <td>
+            {% if subject[3] == 10 %}
+                S
+            {% elif subject[3] == 9 %}
+                A
+            {% elif subject[3] == 8 %}
+                B
+            {% elif subject[3] == 7 %}
+                C
+            {% elif subject[3] == 6 %}
+                D
+            {% elif subject[3] == 5 %}
+                E
+            {% else %}
+                F
+            {% endif %}
+        </td>
+        <td>
+            <div class="action-buttons">
+                <form action="/update_subject/{{ subject[0] }}" method="GET">
+                    <button class="btn-primary">Update</button>
+                </form>
+                <form action="/delete_subject/{{ subject[0] }}" method="POST">
+                    <button class="btn-danger">Delete</button>
+                </form>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+{% endfor %}
+
+    <!-- {% for item in graph_data %}
+        <p>
+            {{ item.semester }} → {{ item.sgpa }}
+        </p>
+    {% endfor %} -->
+
+    <h2 class="section-title">Academic Progress</h2>
+    <canvas id="sgpaChart"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const semesters = [
+                {% for item in graph_data %}
+                    "{{ item.semester }}",
+                {% endfor %}
+            ];
+
+        const sgpas = [
+            {% for item in graph_data %}
+                {{ item.sgpa }},
+            {% endfor %}
+        ];
+        console.log(semesters);
+        console.log(sgpas);
+        const ctx = document.getElementById('sgpaChart').getContext('2d');
+        new Chart(ctx, {
+        type: 'line',
+        data: {
+                labels: semesters,
+                datasets: [{
+                    label: 'SGPA',
+                    data: sgpas
+                }]
+            }
+        });
+    </script>
+</body>
+</html>

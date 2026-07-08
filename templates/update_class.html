@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Class</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="form-container">
+
+    <div class="form-card">
+
+        <h1>📅 Update Class</h1>
+
+        <p class="form-subtitle">
+            Modify class schedule details
+        </p>
+
+        {% if error %}
+            <p class="error-message">
+                {{ error }}
+            </p>
+        {% endif %}
+
+        <form action="/update_class/{{ entry[0] }}"
+              method="POST">
+
+            <input
+                type="text"
+                name="subject"
+                value="{{ entry[2] }}"
+                placeholder="Enter Subject Name"
+                required
+            >
+
+            <br><br>
+
+            <input
+                type="time"
+                name="start_time"
+                value="{{ entry[3] }}"
+                required
+            >
+
+            <br><br>
+
+            <input
+                type="time"
+                name="end_time"
+                value="{{ entry[4] }}"
+                required
+            >
+
+            <br><br>
+
+            <select name="day" required>
+
+                <option value="1"
+                    {% if entry[1] == 1 %}selected{% endif %}>
+                    Monday
+                </option>
+
+                <option value="2"
+                    {% if entry[1] == 2 %}selected{% endif %}>
+                    Tuesday
+                </option>
+
+                <option value="3"
+                    {% if entry[1] == 3 %}selected{% endif %}>
+                    Wednesday
+                </option>
+
+                <option value="4"
+                    {% if entry[1] == 4 %}selected{% endif %}>
+                    Thursday
+                </option>
+
+                <option value="5"
+                    {% if entry[1] == 5 %}selected{% endif %}>
+                    Friday
+                </option>
+
+            </select>
+
+            <br><br>
+
+            <button
+                type="submit"
+                class="btn-primary">
+                Save Changes
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+    
+</body>
+</html>

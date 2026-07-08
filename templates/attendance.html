@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+    <h1 class="attendance-title">📚 Attendance</h1>
+{% if message %}
+    <!-- <h3>{{ message }}</h3>
+    <h4>Please Click On The Link Below To Add Semester</h4>
+    <a href="/grades">Grades</a> -->
+    <div class="empty-state">
+    <h3>📚 No Semester Found</h3>
+    <p>Please add a semester before tracking attendance.</p>
+    <a href="/grades" class="add-semester-btn">
+    ➕ Add Semester
+</a>
+</div>
+{% endif %}
+
+{% if today_classes %}
+    <form action="/attendance" method="POST">
+    {% for class in today_classes %}
+    <div class="class-card">
+        <h3>{{ class[2] }}</h3>
+        <p>{{ class[3] }} - {{ class[4] }}</p>
+        <div class="attendance-options">
+            <input type="radio" name="{{ class[0] }}" value="1"
+            {% if attendance_status.get(class[0]) == 1 %} checked {% endif %} required>
+                Present
+            <input type="radio" name="{{ class[0] }}" value="0"
+            {% if attendance_status.get(class[0]) == 0 %} checked {% endif %}>
+                Absent
+            <input type="radio" name="{{ class[0] }}" value="2" {% if attendance_status.get(class[0]) == 2 %}checked {% endif %}>
+                Not Held
+        </div>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn-primary">Save Attendance</button>
+</form>
+{% endif %}
+
+<h2 class="summary-title">📊 Attendance Summary</h2>
+{% for item in attendance_data %}
+
+<div class="summary-card">
+
+    <h3>{{ item.subject }}</h3>
+
+    <p> 📖 Held Classes : {{ item.held }}</p>
+
+    <p> ✅ Present : {{ item.present }}</p>
+
+    <p> ❌ Absent : {{ item.absent }}</p>
+
+    <p> 📊 Percentage : {{ item.percentage }}%</p>
+
+    {% if item.held == 0 %}
+        <p>ℹ No attendance records yet.</p>
+
+    {% elif item.percentage < 75 %}
+        <p class="danger">⚠ Attendance Shortage</p>
+
+    {% elif item.percentage == 75 %}
+        <p class="warning">⚡ At minimum safe limit</p>
+
+    {% else %}
+        <p class="good">✅ Attendance Good</p>
+
+    {% endif %}
+
+</div>
+
+{% endfor %}
+
+</body>
+</html>

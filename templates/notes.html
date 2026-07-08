@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Notes Uploader</title>
+</head>
+<body>
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+<div class="upload-card">
+    <h2>📤 Upload Study Material</h2>
+    <p>Upload PDFs, PPTs, DOCX files and organize them subject-wise.</p>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" placeholder="Enter The File Name" required>
+        <br><br>
+        <input type="text" name="subject" placeholder="Enter The Subject Name" required>
+        <br><br>
+        <button type="submit" class="btn-primary">Upload</button>
+    </form>
+</div>
+
+<div class="notes-header">
+    <h2>📚 Your Notes</h2>
+    <!-- <div class="notes-actions"> -->
+    <form action="/notes" method="GET">
+        <input type="text" name="search" placeholder="Search Notes" value="{{ request.args.get('search','') }}">
+        <button type="submit" class="btn-primary">Search</button>
+    </form>
+</div>
+<div class="filter-section">
+    <form action="/notes" method="GET">
+        <select name="subject">
+            <option value="">All Subjects</option>
+            {% for subject in subjects %}
+                <option value="{{ subject[0] }}"> {{ subject[0] }} </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn-primary">Filter</button>
+    </form>
+</div>
+
+
+
+
+{% for note,found_in in notes %}
+
+<div class="note-card">
+    <div class="note-name">
+        {% if note[3] == ".pdf" %}
+            📕 PDF {{ note[1] }}
+        {% elif note[3] == ".pptx" %}
+            📊 PPTX {{ note[1] }}
+        {% elif note[3] == ".txt" %}
+            📝 TXT {{ note[1] }}
+        {% elif note[3] == ".docx" %}
+            📘 DOCX {{ note[1] }}
+        {% endif %}
+    </div>
+    <span class="subject-badge">{{ note[5] }}</span>
+    <div class="note-date">
+        Uploaded : {{ note[8] }}
+    </div>
+    {% if found_in %}
+        <p class="found-in"> 🔍 Found in: {{ found_in }} </p>
+    {% endif %}
+    <div class="note-actions">
+        <a class="open-btn" href="/open_note/{{ note[0] }}" target="_blank"> Open </a>
+        <a class="download-btn" href="/download_note/{{ note[0] }}"> Download </a>
+        <a class="summary-btn" href="/notes_summary/{{ note[0] }}"> AI Summary</a>
+        <form action="/delete_note/{{ note[0] }}" method="POST" style="display:inline;">
+            <button class="delete-btn">Delete</button> 
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+<div id="loading-overlay">
+
+    <div class="loading-box">
+
+        <div class="loader"></div>
+
+        <h2>🤖 AI is studying your notes...</h2>
+
+        <p>
+            This usually takes
+            <strong>5–15 seconds</strong>.
+        </p>
+
+        <small>
+            Please don't refresh the page.
+        </small>
+
+    </div>
+
+</div>
+<script>
+
+document.querySelectorAll(".summary-btn").forEach(button=>{
+
+    button.addEventListener("click",function(){
+
+        document.getElementById("loading-overlay").style.display="flex";
+
+    });
+
+});
+
+</script>
+
+</body>
+</html>

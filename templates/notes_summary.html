@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Notes Summary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='notes_style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='notes_summary.css') }}">
+</head>
+
+<body>
+
+{% include "navbar.html" %}
+
+<div class="container">
+
+    <div class="summary-header">
+        <h1>📘 AI Notes Summary</h1>
+        <h2>{{ note.file_name }}</h2>
+        <p><strong>📚 Subject:</strong> {{ note.subject }}</p>
+        <div class="summary-actions">
+            <a href="/regenerate_summary/{{ note.id }}" class="btn-regenerate">🔄 Regenerate Summary</a>
+            <a href="/notes" class="btn-back">← Back to Notes</a>
+        </div>
+    </div>
+
+    <!-- Summary -->
+
+    <div class="summary-card">
+        <h2>📖 Quick Summary</h2>
+        <p>{{ summary.summary }}</p>
+    </div>
+
+    <!-- Key Points -->
+
+    <div class="summary-card">
+        <h2>⭐ Key Points</h2>
+
+        <ul>
+            {% for point in summary.key_points %}
+            <li>{{ point }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Important Topics -->
+
+    <div class="summary-card">
+
+        <h2>🔥 Important Topics</h2>
+
+        <ul>
+            {% for topic in summary.important_topics %}
+            <li>{{ topic }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Definitions -->
+
+    <div class="summary-card">
+
+        <h2>📚 Definitions</h2>
+
+        <ul>
+            {% for definition in summary.definitions %}
+            <li>{{ definition }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Formula Sheet -->
+
+    <div class="summary-card">
+
+        <h2>📐 Formula Sheet</h2>
+
+        <ul>
+            {% for formula in summary.formula_sheet %}
+            <li>{{ formula }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Derivations -->
+
+    <div class="summary-card">
+
+        <h2>🧮 Important Derivations</h2>
+
+        {% for item in summary.derivations %}
+
+        <div class="mini-card">
+
+            <h3>{{ item.topic }}</h3>
+
+            <p><strong>Importance:</strong> {{ item.importance }}</p>
+
+            <p><strong>Memory Hint:</strong> {{ item.memory_hint }}</p>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    <!-- Code Explanations -->
+
+    <div class="summary-card">
+
+        <h2>💻 Code Explanations</h2>
+
+        {% for item in summary.code_explanations %}
+
+        <div class="mini-card">
+
+            <h3>{{ item.topic }}</h3>
+
+            <p><strong>Difficulty:</strong> {{ item.difficulty }}</p>
+
+            <p><strong>Idea:</strong> {{ item.idea }}</p>
+
+            <p><strong>Complexity:</strong> {{ item.complexity }}</p>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    <!-- Applications -->
+
+    <div class="summary-card">
+
+        <h2>🚀 Applications</h2>
+
+        <ul>
+            {% for item in summary.applications %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Limitations -->
+
+    <div class="summary-card">
+
+        <h2>⚠️ Limitations</h2>
+
+        <ul>
+            {% for item in summary.limitations %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Common Mistakes -->
+
+    <div class="summary-card">
+
+        <h2>❌ Common Mistakes</h2>
+
+        <ul>
+            {% for item in summary.common_mistakes %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Memory Tricks -->
+
+    <div class="summary-card">
+
+        <h2>🧠 Memory Tricks</h2>
+
+        <ul>
+            {% for item in summary.memory_tricks %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Prerequisites -->
+
+    <div class="summary-card">
+
+        <h2>📖 Prerequisites</h2>
+
+        <ul>
+            {% for item in summary.prerequisites %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Frequently Confused With -->
+
+    <div class="summary-card">
+
+        <h2>🔄 Frequently Confused With</h2>
+
+        <ul>
+            {% for item in summary.frequently_confused_with %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Exam Questions -->
+
+    <div class="summary-card">
+
+        <h2>🎓 Expected Exam Questions</h2>
+
+        <h3>Theory</h3>
+        <ul>
+            {% for q in summary.exam_questions.theory %}
+            <li>{{ q }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Applications</h3>
+        <ul>
+            {% for q in summary.exam_questions.applications %}
+            <li>{{ q }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Problem Solving</h3>
+        <ul>
+            {% for q in summary.exam_questions.problem_solving %}
+            <li>{{ q }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Coding</h3>
+        <ul>
+            {% for q in summary.exam_questions.coding %}
+            <li>{{ q }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Derivations</h3>
+        <ul>
+            {% for q in summary.exam_questions.derivations %}
+            <li>{{ q }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Comparisons</h3>
+        <ul>
+            {% for q in summary.exam_questions.comparisons %}
+            <li>{{ q }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <!-- Exam Tips -->
+
+    <div class="summary-card">
+
+        <h2>🎯 Exam Tips</h2>
+
+        <ul>
+            {% for item in summary.exam_tips %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+</div>
+
+</body>
+</html>

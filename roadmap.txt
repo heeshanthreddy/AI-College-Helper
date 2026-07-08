@@ -1,0 +1,847 @@
+[✓] Authentication --> done
+[✓] Tasks          --> done
+[✓] Assignments    --> done
+[✓] Grades         --> done
+[✓] Timetable      --> done
+[✓] Attendance     --> done
+[✓] Dashboard      --> done
+[ ] AI Study Planner --> version1 done
+[ ] AI Academic Advisor --> version1 done
+[✓] Notes Upload   ---> done
+[ ] AI Notes Summarizer --> done
+[ ] AI Weekly Review 
+[ ] Ask My Notes (Mini RAG)
+[✓] Productivity Score --> done
+[ ] Study Streaks
+[ ] CSS/UI Polish
+[ ] Deployment
+
+
+Later we'll improve the prompt so Gemini avoids repetition.
+
+Example prompt addition:
+
+Do not repeat the same information in multiple sections.
+
+Each section should contain unique insights.
+
+Step 1: Smart Academic Advisor
+Keep it
+
+This is the strongest feature.
+
+But I would change the implementation.
+
+Instead of:
+
+CGPA
+Attendance
+Assignments
+Productivity
+
+only,
+
+also send:
+
+Pending Tasks
+Overdue Assignments
+Weak Subjects
+Attendance Alerts
+Recent Productivity Trend
+
+to Claude.
+
+Why?
+
+Current prompt:
+
+CGPA = 8.2
+Attendance = 72%
+
+gives generic advice.
+
+But this:
+
+CGPA = 8.2
+
+Attendance:
+DAA = 68%
+OS = 71%
+
+Pending Assignments:
+3
+
+Overdue:
+1
+
+Productivity:
+52
+
+Pending Tasks:
+7
+
+gives personalized advice.
+
+That's where AI becomes useful.
+
+Route
+/ai_advisor
+
+Good.
+
+Dashboard
+
+Add card:
+
+AI Academic Advisor
+[Generate Advice]
+
+Response:
+
+You are performing well academically.
+
+Priority 1:
+Increase DAA attendance.
+
+Priority 2:
+Complete OS assignment due tomorrow.
+
+Priority 3:
+Reduce pending tasks from 7 to below 3.
+
+Looks professional.
+
+Step 2: Notes Summarizer
+Keep it
+
+This is easiest to build.
+
+You already have:
+
+notes.extracted_text
+
+stored in DB.
+
+Perfect.
+
+Route
+/summarize/<note_id>
+Flow
+SELECT extracted_text
+FROM notes
+
+↓
+
+Claude API
+
+↓
+
+Store result
+
+↓
+
+Show summary
+
+Small improvement
+
+Create new column:
+
+summary TEXT
+
+in notes table.
+
+Otherwise every click:
+
+Summarize
+
+will call Claude again and cost money.
+
+Store once:
+
+summary
+
+Reuse later.
+
+Step 3: MCQ Generator
+
+This is your showstopper.
+
+I strongly agree.
+
+Most students do:
+
+Upload PDF
+Summarize PDF
+
+boring.
+
+But
+
+Upload Notes
+Generate Quiz
+Take Quiz
+See Score
+
+looks like an actual AI product.
+
+I would modify it slightly
+
+Instead of:
+
+5 MCQs
+
+let user choose:
+
+5
+10
+20
+
+questions.
+
+Claude Prompt
+
+Generate 10 MCQs.
+
+Return valid JSON.
+
+[
+ {
+   question:"",
+   options:["","","",""],
+   answer:""
+ }
+]
+Store generated quiz
+
+New table:
+
+mcq_history
+
+optional.
+
+Can be Phase 5.
+
+Step 4: Study Planner
+
+I would NOT make Claude generate everything.
+
+This is important.
+
+Current idea:
+
+Exam Date
++
+Subjects
++
+Claude
+=
+Schedule
+
+works.
+
+But:
+
+Better
+
+You already have timetable.
+
+You already have assignments.
+
+You already have attendance.
+
+You already have productivity.
+
+Use your own logic first.
+
+Example:
+
+if attendance < 75:
+    increase hours
+if exam near:
+    increase revision
+if subject weak:
+    allocate more time
+
+Then ask Claude to polish it.
+
+Reason:
+
+Employers love seeing:
+
+Hybrid AI System
+
+Rule-based planning
++
+LLM enhancement
+
+more than
+
+Send everything to Claude
+Biggest Thing I Would Add
+
+This is what can make your project stand out.
+
+AI Note Search
+
+You already have:
+
+extracted_text
+
+for every note.
+
+Imagine:
+
+Ask Notes
+
+"What is normalization in DBMS?"
+
+AI searches uploaded notes.
+
+Returns:
+
+Normalization is...
+
+Found in:
+DBMS Unit 3.pdf
+
+This is much more impressive than summarization.
+
+Route
+
+/ask_notes
+
+Prompt:
+
+Use only the provided notes.
+
+Question:
+"What is normalization?"
+
+Notes:
+<retrieved text>
+
+This becomes a mini-RAG system.
+
+Recruiters love hearing:
+
+Built a Retrieval-Augmented Generation (RAG)
+Academic Assistant.
+What I Would Build First
+
+If I were you:
+
+Phase 4 Order
+Notes Summarizer ✅
+AI Academic Advisor ✅
+MCQ Generator ✅
+Ask Notes (NEW) ⭐
+Study Planner ✅
+One More Important Thing
+
+Right now your roadmap says:
+
+Claude API
+Claude API
+Claude API
+Claude API
+
+Be careful.
+
+If Anthropic changes pricing:
+
+your whole app becomes dependent.
+
+Design a layer like:
+
+def ask_ai(prompt):
+    return claude_response
+
+Later you can swap:
+
+Claude
+OpenAI
+Gemini
+
+without changing routes.
+
+Final verdict
+
+I would rate your current project structure:
+
+8.5/10 for a student entering 3rd year.
+
+After adding:
+
+AI Advisor
+Summarizer
+MCQ Generator
+Ask Notes (RAG)
+
+
+Attendance      = 30
+Assignments     = 25
+Tasks           = 25
+Study Streak    = 10
+AI Study Plan   = 10
+--------------------
+Total = 100
+
+
+
+
+Remaining AI Advisor improvements
+
+These are intentionally postponed.
+
+1)
+Last Generated:
+25 June 2026
+
+We decided to save the report into the database later.
+
+2)
+Generate New Report
+
+instead of regenerating every refresh.
+
+We postponed this because otherwise every page refresh spends Gemini quota.
+
+This will require
+
+ai_reports table
+
+We'll build it later.
+
+3)
+
+Color polish
+
+For example
+
+Green
+Yellow
+Orange
+Red
+
+depending on health.
+
+We postponed all UI polishing until the project is feature complete.
+
+
+
+Phase 1 (Current) ✅
+
+Build a working AI Planner.
+
+✅ get_planner_context()
+✅ generate_study_plan()
+✅ Planner UI
+✅ Mentor Mode
+✅ Recovery / Performance Mode
+Phase 2 (Planner Intelligence v2) ⭐
+
+After the planner works, we'll upgrade it.
+
+1. Dynamic Free Slot Generator
+
+Instead of
+
+09:15-11:30
+14:15-16:30
+
+we'll automatically compute
+
+Wake Up
+↓
+
+Breakfast
+
+↓
+
+Class
+
+↓
+
+FREE SLOT ← generated
+
+↓
+
+Class
+
+↓
+
+Lunch
+
+↓
+
+FREE SLOT ← generated
+
+↓
+
+Class
+
+↓
+
+Dinner
+
+↓
+
+FREE SLOT
+
+So if tomorrow your classes are
+
+9-10
+11-12
+3-5
+
+the planner will automatically know
+
+10-11
+12-2
+5-7
+9-10:30
+
+are available.
+
+That is a huge upgrade.
+
+2. Weekend Logic
+
+Instead of weekday slots
+
+Weekend becomes
+
+Morning Session
+
+↓
+
+Break
+
+↓
+
+Afternoon Session
+
+↓
+
+Evening Practice
+
+↓
+
+Night Revision
+
+because there are no classes.
+
+3. Exam Mode ⭐⭐⭐
+
+One week before exams
+
+Planner automatically changes.
+
+Instead of
+
+Assignments
+Tasks
+Attendance
+
+it becomes
+
+Exam Revision
+
+↓
+
+Weak Topics
+
+↓
+
+Past Papers
+
+↓
+
+Formula Revision
+
+↓
+
+Sleep
+4. Adaptive Sleeping
+
+Normal
+
+Sleep
+11 PM
+
+Wake
+6:30 AM
+
+Exam Week
+
+Sleep
+12 AM
+
+Wake
+7 AM
+
+Not
+
+2 AM
+4 AM
+
+because we don't want unhealthy schedules.
+
+5. Smart Topic Allocation
+
+Instead of
+
+Study ML
+
+Planner says
+
+Study Autoencoders
+
+Reason:
+Large notes uploaded.
+
+using your extracted notes.
+
+6. Smart Energy Planning
+
+Morning
+
+Hard topics
+
+Afternoon
+
+Assignments
+
+Night
+
+Revision
+
+This is what will make the planner feel like a real mentor instead of a timetable generator.
+
+I have one more idea 💡
+
+Since this is probably the flagship feature of your project, we can make the planner evolve over time.
+
+Version 1
+
+Static planner (what we're building now).
+
+Version 2
+
+Learns timetable gaps.
+
+Version 3
+
+Learns productivity trends.
+
+Version 4
+
+Exam Mode.
+
+Version 5
+
+Behavior-based mentor.
+
+Imagine a recruiter asking:
+
+"How does your planner work?"
+
+Instead of saying "It uses Gemini," you'll be able to explain:
+
+"The planner combines attendance, productivity history, assignment deadlines, today's timetable, notes coverage, and task completion to generate an adaptive study schedule. It adjusts workload based on the student's recent behavior and avoids class timings automatically."
+
+That's a much stronger engineering story.
+
+One more thing (future improvement)
+
+Just like the AI Advisor, later we'll add:
+
+Last Generated:
+30 June 2026
+
+[ Generate New Plan ]
+
+
+
+Phase 1 – UI
+✅ Doubt Solver page
+✅ Navbar card/link
+✅ Question input
+✅ Ask button
+Phase 2 – Mini RAG Engine
+✅ Extract keywords from the question
+✅ Search extracted_text using SQL (LIKE)
+✅ Find keyword positions
+✅ Generate 300–400 word chunks around each match
+✅ Rank and keep the best 3 chunks
+✅ Send only those chunks to Gemini
+Phase 3 – User Experience
+✅ Display AI answer
+✅ Display source filenames
+✅ Handle "No matching notes found"
+✅ Loading overlay
+✅ Polished UI
+Phase 4 – Advanced RAG
+⏳ Embeddings
+⏳ Vector database (FAISS/ChromaDB)
+⏳ Semantic retrieval
+
+
+
+
+
+
+Current table:
+
+tasks
+------
+id
+task
+status
+user_id
+
+Future table:
+
+tasks
+------
+id
+task
+category
+priority
+estimated_time
+status
+user_id
+
+where
+
+Academic
+Personal
+Health
+Coding
+Placement
+
+Then the planner can reason like this:
+
+Morning
+↓
+Academic
+
+Afternoon
+↓
+Coding
+
+Evening
+↓
+Health
+
+Night
+↓
+Revision
+
+That's much closer to how a real mentor would organize a day.
+
+We'll leave this for Version 2, because it requires a database migration and changes to the task form. 
+Right now,  our goal is to finish the core planner.
+
+
+
+
+
+
+📌 Delayed Roadmap (Intentionally)
+
+🧭 AI Planner
+Backend
+✅ Complete
+UI (we postponed)
+✅ Same navbar as Assignments (Permanent)
+⏳ Timeline schedule instead of plain cards
+⏳ Better Planner Mode badge
+⏳ Coach message bubble
+⏳ Today's Focus card (optional)
+⏳ Better spacing & shadows
+⏳ Mobile responsiveness
+Future Logic (Delayed)
+
+Planner improvements:
+
+⏳ Dynamic free slots
+(depends on today's timetable)
+⏳ Holiday timings
+⏳ Exam Mode
+⏳ One-day-before revision mode
+⏳ Exam schedule table
+
+Version 2
+
+
+Smart Notifications
+RAG based Doubt Solver
+AI Planner Final UI
+
+Version 1 (Now) ✅
+One question at a time.
+New question replaces the old answer.
+No history.
+Version 2
+"Recent Questions" sidebar (last 10–20 questions).
+Click a question to regenerate an answer.
+Version 3
+Full search history with timestamps (only if you decide users actually need it).
+
+
+Then start Version 2:
+
+AI Knowledge fallback button
+Embeddings (FAISS/ChromaDB)
+Recent question history
+Exam Mode
+Smart topic allocation
+
+
+
+
+
+Phase 1 — Helpers
+
+Move:
+
+✅ get_current_semester()
+✅ get_task_stats()
+✅ get_assignment_stats()
+✅ get_attendance_stats()
+✅ get_student_context()
+✅ productivity helpers (if any)
+Phase 2 — AI
+
+Move:
+
+generate_ai_advisor()
+generate_weekly_review()
+generate_study_plan()
+generate_summary()
+generate_mcq()
+generate_doubt_solver()
+retrieve_relevant_notes()
+extract_keywords()
+save_ai_report()
+get_ai_report()
+Phase 3
+
+Clean remaining duplicate SQL if it's easy.
+
+Phase 4
+
+Deploy 🚀
+
+One thing I don't want us to do
+
+I don't want us to suddenly move 20 functions at once.
+
+That is how projects accidentally break.
+
+We'll move one, test, then move the next.
+
+That keeps the project stable.
+
+

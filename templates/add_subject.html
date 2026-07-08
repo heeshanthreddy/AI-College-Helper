@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-card">
+            <h1>Add Subject</h1>
+            <p class="form-subtitle"> Add a subject to your semester</p>
+        <form action="/add_subject/{{ semester_id }}" method="POST">
+            <input type="text" name="subject_name" placeholder="Subject Name" required>
+            <input type="number" name="credits" placeholder="Credits" min="1" required>
+            <select name="grade" required>
+                <option value="">
+                    Select Grade
+                </option>
+                <option value="10">S (10)</option>
+                <option value="9">A (9)</option>
+                <option value="8">B (8)</option>
+                <option value="7">C (7)</option>
+                <option value="6">D (6)</option>
+                <option value="5">E (5)</option>
+                <option value="0">F (0)</option>
+            </select>
+            <button type="submit" class="btn-primary"> Save Subject </button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Review</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='weekly_review.css') }}">
+</head>
+<body>
+
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="review-header">
+        <h1>📈 AI Weekly Review</h1>
+        <p>Your personalized academic analysis for this week.</p>
+        <div class="action-buttons">
+            <a href="/regenerate_weekly_review" class="btn-regenerate">🔄 Regenerate Review</a>
+            <a href="/analytics" class="btn-back">← Back to Analytics</a> 
+        </div>
+    </div>
+    <div class="review-grid">
+
+        <!-- Overall Score -->
+
+        <div class="review-card score-card">
+
+            <h2>🏆 Overall Performance</h2>
+
+            <div class="score-box">
+
+                <div class="score-number">
+                    {{ review.overall_score }}/100
+                </div>
+
+                <div class="rating">
+                    {{ review.overall_rating }}
+                </div>
+
+                <div class="verdict">
+                    {{ review.overall_verdict }}
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Weekly Highlights -->
+
+        <div class="review-card highlight-card">
+
+            <h2>⭐ Weekly Highlights</h2>
+
+            <p><strong>Biggest Achievement</strong></p>
+
+            <p>{{ review.biggest_achievement }}</p>
+
+            <hr>
+
+            <p><strong>Biggest Concern</strong></p>
+
+            <p>{{ review.biggest_concern }}</p>
+
+        </div>
+
+        <!-- Subject Spotlight -->
+
+        <div class="review-card subject-card">
+
+            <h2>📚 Subject Spotlight</h2>
+
+            <div class="subject-box">
+
+                <p>
+
+                    <strong>Best Subject:</strong><br>
+
+                    {{ review.subject_spotlight.best_subject }}
+
+                </p>
+
+            </div>
+
+            <div class="subject-box">
+
+                <p>
+
+                    <strong>Needs Attention:</strong><br>
+
+                    {{ review.subject_spotlight.needs_attention }}
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- Weekly Wins -->
+
+        <div class="review-card highlight-card">
+
+            <h2>✅ Weekly Wins</h2>
+
+            <ul>
+
+                {% for item in review.weekly_wins %}
+
+                    <li>{{ item }}</li>
+
+                {% endfor %}
+
+            </ul>
+
+        </div>
+
+        <!-- Goals -->
+
+        <div class="review-card goal-card">
+
+            <h2>🎯 Next Week Goals</h2>
+
+            <ul>
+
+                {% for item in review.next_week_goals %}
+
+                    <li>{{ item }}</li>
+
+                {% endfor %}
+
+            </ul>
+
+        </div>
+
+        <!-- Suggestions -->
+
+        <div class="review-card focus-card">
+
+            <h2>💡 Study Suggestions</h2>
+
+            <ul>
+
+                {% for item in review.study_suggestions %}
+
+                    <li>{{ item }}</li>
+
+                {% endfor %}
+
+            </ul>
+
+        </div>
+
+        <!-- Weekly Challenge -->
+
+        <div class="review-card goal-card">
+
+            <h2>🔥 Weekly Challenge</h2>
+
+            <p>{{ review.weekly_challenge }}</p>
+
+        </div>
+
+        <!-- Semester Risk -->
+
+        <div class="review-card risk-card">
+
+            <h2>⚠ Semester Risk</h2>
+
+            <div class="risk-level">
+
+                {{ review.semester_risk.level }}
+
+            </div>
+
+            <p>{{ review.semester_risk.reason }}</p>
+
+        </div>
+
+        <!-- Focus Meter -->
+
+        <div class="review-card focus-card">
+
+            <h2>📊 Focus Meter</h2>
+
+            <div class="focus-item">
+
+                <span>Assignments</span>
+
+                <div class="progress">
+
+                    <div class="progress-fill"
+                         style="width:{{ review.focus_meter.assignments }}%;">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="focus-item">
+
+                <span>Attendance</span>
+
+                <div class="progress">
+
+                    <div class="progress-fill"
+                         style="width:{{ review.focus_meter.attendance }}%;">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="focus-item">
+
+                <span>Revision</span>
+
+                <div class="progress">
+
+                    <div class="progress-fill"
+                         style="width:{{ review.focus_meter.revision }}%;">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Motivation -->
+
+        <div class="review-card motivation-card">
+
+            <h2>🚀 Motivation</h2>
+
+            <p class="quote">
+
+                "{{ review.motivation }}"
+
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div id="loading-overlay">
+
+    <div class="loading-box">
+
+        <div class="loader"></div>
+
+        <h2>🤖 AI is analyzing your academic progress..</h2>
+
+        <p>
+            This usually takes
+            <strong>5–15 seconds</strong>.
+        </p>
+
+        <small>
+            Please don't refresh the page.
+        </small>
+
+    </div>
+
+</div>
+<script>
+
+document.querySelector(".btn-regenerate").addEventListener("click", function () {
+
+    document.getElementById("loading-overlay").style.display = "flex";
+
+});
+
+</script>
+
+
+</body>
+</html>

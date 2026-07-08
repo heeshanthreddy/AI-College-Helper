@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="form-container">
+
+    <div class="form-card">
+
+        <h1>Add Class</h1>
+
+        <p class="form-subtitle">
+            Create a timetable entry
+        </p>
+
+        {% if error %}
+            <p class="error-message">
+                {{ error }}
+            </p>
+        {% endif %}
+
+        <form action="/add_class/{{ semester_id }}"
+              method="POST">
+
+            <input type="text"
+                   name="subject"
+                   placeholder="Subject Name"
+                   required>
+
+            <input type="time"
+                   name="start_time"
+                   required>
+
+            <input type="time"
+                   name="end_time"
+                   required>
+
+            <select name="day"
+                    required>
+
+                <option value="">Select Day</option>
+
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+
+            </select>
+
+            <button type="submit"
+                    class="btn-primary">
+                Save Class
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+</body>
+</html>

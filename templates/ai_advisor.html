@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static',filename='ai_advisor.css') }}">
+    <title>ai_advisor</title>
+</head>
+<body>
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+<div class="container">
+    <div class="advisor-header">
+            <h1>🎯 AI Academic Advisor</h1>
+            <p>Your personalized academic guidance based on your current performance.</p>
+        <div class="header-buttons">
+            <a href="/regenerate_ai_advisor" class="btn-regenerate">🔄 Generate New Report</a>
+            <a href="/analytics" class="btn-back"> ← Back to Analytics</a>
+        </div>
+    </div>
+
+    <div class="card status-card">
+        <h2>🔴 Overall Status</h2>
+        <p class="status">{{ report.overall_status }}</p>
+    </div>
+
+    <div class="card summary-card">
+        <h2>📄 Summary</h2>
+        <p>{{ report.summary }}</p>
+    </div>
+
+    <div class="grid-2">
+        <div class="card strengths-card">
+            <h2>💪 Strengths</h2>
+            <ul>
+                {% for strength in report.strengths %}
+                    <li>{{ strength }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="card weaknesses-card">
+            <h2>⚠ Weaknesses</h2>
+            <ul>
+                {% for item in report.weaknesses %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card priority-card">
+            <h2>🚀 Priority Actions</h2>
+            <ul>
+                {% for item in report.priority_actions %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="card recommendation-card">
+            <h2>💡 Recommendations</h2>
+            <ul>
+                {% for item in report.recommendations %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card motivation-card">
+        <h2>❤️ Motivation</h2>
+        <p>{{ report.motivation }}</p>
+    </div>
+</div>
+
+<div id="loading-overlay">
+
+    <div class="loading-box">
+
+        <div class="loader"></div>
+
+        <h2>🤖 AI is reviewing your academic performance...</h2>
+
+        <p>
+            This usually takes
+            <strong>5–15 seconds</strong>.
+        </p>
+
+        <small>
+            Please don't refresh the page.
+        </small>
+
+    </div>
+
+</div>
+
+<script>
+
+document.querySelector(".btn-regenerate").addEventListener("click", function(){
+
+    document.getElementById("loading-overlay").style.display = "flex";
+
+});
+
+</script>
+    
+</body>
+</html>

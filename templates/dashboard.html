@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="dashboard-header">
+    <a href="/logout" class="logout-btn">
+        Logout
+    </a>
+</div>
+
+{% if no_semester %}
+<div class="welcome-card">
+
+    <div class="welcome-icon">
+        🎓
+    </div>
+
+    <h2>Welcome to AI College Helper!</h2>
+
+    <p>
+        It looks like you're just getting started.
+        Add your first semester to unlock all academic features.
+    </p>
+
+    <div class="feature-list">
+
+        <div>✅ CGPA Calculator</div>
+        <div>✅ Attendance Tracker</div>
+        <div>✅ Assignment Manager</div>
+        <div>✅ Smart Timetable</div>
+        <div>✅ AI Study Planner</div>
+        <div>✅ Academic Analytics</div>
+
+    </div>
+
+    <a href="/grades" class="setup-btn"> 🚀 Set Up Academic Profile</a>
+
+</div> 
+{% else %}
+
+<div class="dashboard-container">
+    <div class="welcome-section">
+        <h1>Welcome Back, {{ session["username"] }} 👋</h1>
+        <p>Ready to conquer today's goals?</p>
+    </div>
+    <h2>Notifications</h2>
+    {% if notifications %}
+        {% for notification in notifications %}
+            <div class="notification-card">
+                <p>{{ notification }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>✅ No Notifications</p>
+    {% endif %}
+
+    <h2>Quick Stats</h2>
+        <div class="stats-container">
+            <div class="card">
+            <h3>Semester</h3>
+            <p>{{ current_semester_no }}</p>
+        </div>
+        <div class="card">
+            <h3>Assignments</h3>
+            <p>{{ pending_assignments }}</p>
+        </div>
+        <div class="card">
+            <h3>Tasks</h3>
+            <p>{{ pending_tasks }}</p>
+        </div>
+        <div class="card">
+            <h3>Classes Today</h3>
+            <p>{{ today_classes_count }}</p>
+        </div>
+        <div class="card">
+            <h3>CGPA</h3>
+            <p>{{ cgpa }}</p>
+        </div>
+    </div>
+
+    <h2>Modules</h2>
+    <div class="modules-container">
+        <a href="/tasks" class="module-card">📋 Tasks</a>
+        <a href="/grades" class="module-card">🎓 Grades</a>
+        <a href="/timetable" class="module-card">📅 Timetable</a>
+        <a href="/assignments" class="module-card">📝 Assignments</a>
+        <a href="/attendance" class="module-card">✅ Attendance</a>
+        <a href="/analytics" class="module-card">📊 Analytics</a>
+        <a href="/notes" class="module-card">📚 Notes</a>
+        <a href="/ai_advisor" class="module-card">🎯 AI Advisor</a>
+        <a href="/ai_planner" class="module-card">🧭 AI Planner</a>
+        <a href="/weekly_review" class="module-card">📈 AI Weekly Review</a>
+        <a href="/doubt_solver" class="module-card"> 🔍 AI Doubt Solver</a>
+        
+</div>
+</div>
+{% endif %}
+
+</body>
+
+</html>

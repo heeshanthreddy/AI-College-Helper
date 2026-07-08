@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="form-container">
+    <div class="form-card">
+        <h1>📝 Update Task</h1>
+        <p class="form-subtitle">Modify your task and save changes</p>
+        <form action="/update/{{ task[0] }}" method="POST">
+            <input type="text" name="task" value="{{ task[1] }}" placeholder="Enter Task Name" required>
+            <br><br>
+            <button type="submit" class="btn-primary">Save Changes</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

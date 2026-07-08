@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+<h1 class="page-title">Weekly Timetable</h1>
+<p class="page-subtitle">
+    Organize and manage your semester schedule
+</p>
+
+{% if message %}
+    <h3>No semesters found.</h3>
+    <p>Please add a semester first before creating a timetable.</p>
+    <a href="/grades">Add Semester</a>
+{% endif %}
+
+<div class="semester-card">
+    <div class="semester-header">
+        <div>
+            <p class="current-semester-label">Current Semester</p>
+            <h2>Semester {{ semester[1] }}</h2>
+            <p class="semester-subtitle"> Weekly Schedule</p>
+        </div>
+        <a href="/add_class/{{ semester[0] }}" class="btn-success"> ➕ Add Class </a>
+    </div>
+    <div class="week-grid">
+        {% for day in range(1,6) %}
+        <div class="day-card">
+            <div class="day-header">
+                {% if day == 1 %}
+                    Monday
+                {% elif day == 2 %}
+                    Tuesday
+                {% elif day == 3 %}
+                    Wednesday
+                {% elif day == 4 %}
+                    Thursday
+                {% else %}
+                    Friday
+                {% endif %}
+            </div>
+            {% for entry in semester_timetable[day] %}
+            <div class="subject-card">
+                <h4>📚 {{ entry[2] }}</h4>
+                <p>
+                    ⏰ {{ entry[3] }} - {{ entry[4] }}
+                </p>
+
+                <div class="class-actions">
+
+                    <form action="/update_class/{{ entry[0] }}"
+                          method="GET">
+
+                        <button type="submit" class="btn-primary">Edit </button>
+                    </form>
+
+                    <form action="/delete_class/{{ entry[0] }}"
+                          method="POST">
+
+                        <button type="submit" class="btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if semester_timetable[day]|length == 0 %}
+
+            <div class="empty-day">
+                🎉 Free Day
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

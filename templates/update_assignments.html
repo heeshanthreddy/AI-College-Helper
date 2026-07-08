@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Assignment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+
+<div class="form-container">
+
+    <div class="form-card">
+
+        <h1>📂 Update Assignment</h1>
+
+        <p class="form-subtitle">
+            Modify assignment details and save changes
+        </p>
+
+        <form action="/update_assignments/{{ assig[0] }}"
+              method="POST">
+
+            <input
+                type="text"
+                name="assignment_name"
+                value="{{ assig[1] }}"
+                placeholder="Assignment Name"
+                required
+            >
+
+            <br><br>
+
+            <input
+                type="text"
+                name="subject"
+                value="{{ assig[2] }}"
+                placeholder="Subject Name"
+                required
+            >
+
+            <br><br>
+
+            <input
+                type="date"
+                name="due_date"
+                value="{{ assig[3] }}"
+                required
+            >
+
+            <br><br>
+
+            <select name="priority" required>
+
+                <option value="3"
+                    {% if assig[4] == 3 %}selected{% endif %}>
+                    🔴 High Priority
+                </option>
+
+                <option value="2"
+                    {% if assig[4] == 2 %}selected{% endif %}>
+                    🟡 Medium Priority
+                </option>
+
+                <option value="1"
+                    {% if assig[4] == 1 %}selected{% endif %}>
+                    🟢 Low Priority
+                </option>
+
+            </select>
+
+            <br><br>
+
+            <button
+                type="submit"
+                class="btn-primary">
+                Save Changes
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+</body>
+</html>

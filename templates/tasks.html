@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% include "navbar.html" %}
+{% include "flash_messages.html" %}
+
+    <!-- ADD TASK FORM ONLY -->
+<div class="top-section">
+    <div class="task-form">
+        <h2>Add New Task</h2>
+        <form action="/add" method="POST">
+            <label>Task Name</label>
+            <br><br>
+            <input type="text" name="task" placeholder="Enter your task">
+            <br><br>
+            <button type="submit" class="btn-primary">Add Task</button>
+        </form>
+    </div>
+    <div class="task-overview">
+        <h2>Task Overview</h2>
+        <p><strong>Total:</strong> {{ total_tasks }}</p>
+        <p><strong>Pending:</strong> {{ pending }}</p>
+        <p><strong>Completed:</strong> {{ completed }}</p>
+    </div>
+</div>
+
+    <!-- When the searched text is not found or newly user is observed we send them this -->
+    {% if message %}
+        <div class="empty-state">
+            <h3>📝 No Tasks Found</h3>
+            <p>{{ message }}</p>
+        </div>
+    {% endif %}
+
+<div class="todo-section">
+    <div class="todo-header">
+        <h2>To Do List</h2>
+        <form action="/tasks" method="GET">
+            <input type="text" name="search" placeholder="Search Tasks">
+            <button type="submit" class="btn-primary">Search</button>
+        </form>
+    </div>
+
+    <div class="filters">
+        <a href="/tasks" class="filter-btn">All</a>
+        <a href="/tasks?filter=pending" class="filter-btn">Pending</a>
+        <a href="/tasks?filter=completed" class="filter-btn">Completed</a>
+    </div>
+{% for task in tasks %}
+
+<div class="task-card">
+    <div class="task-top">
+        <h3>{{ task[1] }}</h3>
+        {% if task[2] == 0 %}
+            <span class="status-pending">🟡 Pending </span>
+        {% else %}
+            <span class="status-completed">🟢 Completed </span>
+        {% endif %}
+    </div>
+    <div class="task-actions">
+        <form action="/update/{{ task[0] }}" method="GET">
+            <button type="submit" class="btn-primary"> Update </button>
+        </form>
+        <form action="/delete/{{ task[0] }}" method="POST">
+            <button type="submit" class="btn-danger"> Delete </button>
+        </form>
+        {% if task[2] == 0 %}
+        <form action="/status/{{ task[0] }}" method="POST">
+            <button type="submit" class="btn-success"> Done </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+</body>
+</html>
