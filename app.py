@@ -47,6 +47,7 @@ from ai_utils import (
     generate_weekly_review,
     generate_doubt_solver
 )
+from db import get_connection
 
 app = Flask(__name__)
 load_dotenv()
@@ -55,129 +56,6 @@ app.secret_key = os.getenv("SECRET_KEY")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-conn = sqlite3.connect("database.db")
-cursor = conn.cursor()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL
-)
-""")
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS tasks(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    task TEXT NOT NULL,
-    status INTEGER DEFAULT 0,
-    user_id INTEGER
-)
-""")
-
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS assignments(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        assignment_name TEXT NOT NULL,
-        subject TEXT NOT NULL,
-        due_date DATE NOT NULL,
-        priority INTEGER NOT NULL,
-        status INTEGER DEFAULT 0,
-        user_id INTEGER,
-        FOREIGN KEY(user_id) REFERENCES users(id)    
-        )
-""" )
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS semesters(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    semester_no INTEGER NOT NULL,
-    user_id INTEGER,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-)
-""")
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS subjects(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject_name TEXT NOT NULL,
-    credits INTEGER NOT NULL,
-    grade INTEGER NOT NULL,
-    semester_id INTEGER NOT NULL,
-    user_id INTEGER,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(semester_id) REFERENCES semesters(id)
-)
-""")
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS timetable(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    day TEXT NOT NULL,
-    subject_name TEXT NOT NULL,
-    start_time TEXT NOT NULL,
-    end_time TEXT NOT NULL,
-    semester_id INTEGER NOT NULL,
-    user_id INTEGER,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(semester_id) REFERENCES semesters(id)
-)
-""")
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS attendance(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timetable_id INTEGER NOT NULL,
-    date DATE NOT NULL,
-    status INTEGER NOT NULL,
-    user_id INTEGER,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(timetable_id) REFERENCES timetable(id)
-)
-""")
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS productivity_history(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    score REAL,
-    record_date DATE
-)
-""")
-
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS notes(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_name TEXT NOT NULL,
-    file_path TEXT NOT NULL,
-    file_type TEXT NOT NULL,
-    file_size INTEGER,
-    subject TEXT,
-    extracted_text TEXT,
-    summary_json TEXT,
-    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    user_id INTEGER,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-)
-""")
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS ai_reports(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    report_type TEXT NOT NULL,
-    report_json TEXT NOT NULL,
-    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-)
-""")
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS study_plans(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    plan_json TEXT NOT NULL,
-    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-)
-""")
-conn.commit()
-conn.close()
 
 @app.route("/")
 def landing():
@@ -186,18 +64,18 @@ def landing():
 @app.route("/tasks")
 def tasks():
     if "username" in session:
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
         filter_type=request.args.get("filter")
         search_text=request.args.get("search")
-        query="SELECT * FROM tasks WHERE user_id=?"
+        query="SELECT * FROM tasks WHERE user_id=%s"
         params=[session["user_id"]]
         if filter_type == "pending":
             query = query +" AND status=0"
-        if filter_type == "completed":
+        elif filter_type == "completed":
             query = query + " AND status=1"
         if search_text:
-            query = query + " AND task LIKE ?"
+            query = query + " AND task ILIKE %s"
             params.append("%"+search_text+"%")
         cursor.execute(query,params)
         tasks=cursor.fetchall()
@@ -207,17 +85,17 @@ def tasks():
         elif len(tasks)==0:
             message = "No tasks yet. Add your first task!"
         cursor.execute(
-            "SELECT COUNT(*) FROM tasks WHERE user_id=?",
+            "SELECT COUNT(*) FROM tasks WHERE user_id=%s",
             (session["user_id"],)
         )
         total_tasks = cursor.fetchone()[0]
         cursor.execute(
-            "SELECT COUNT(*) FROM tasks WHERE user_id=? AND status=0",
+            "SELECT COUNT(*) FROM tasks WHERE user_id=%s AND status=0",
             (session["user_id"],)
         )
         pending = cursor.fetchone()[0]
         cursor.execute(
-            "SELECT COUNT(*) FROM tasks WHERE user_id=? AND status=1",
+            "SELECT COUNT(*) FROM tasks WHERE user_id=%s AND status=1",
             (session["user_id"],)
         )
         completed = cursor.fetchone()[0]
@@ -236,11 +114,11 @@ def about():
 def add_task():
     if "username" in session:  
         task = request.form["task"]             # we store the text in variable and pass it
-        conn = sqlite3.connect("database.db")   # first we are connecting to database
+        conn = get_connection()   # first we are connecting to database
         cursor = conn.cursor()                  # using cursor we are able to apply CRUD 
                     
         cursor.execute(
-            "INSERT INTO tasks(task, user_id) VALUES(?, ?)",
+            "INSERT INTO tasks(task, user_id) VALUES(%s, %s)",
             (task, session["user_id"])
         )
         conn.commit() # now we are saving the changes
@@ -252,11 +130,11 @@ def add_task():
 @app.route("/delete/<int:id>",methods=["POST"])
 def delete(id):
     if "username" in session:
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()  
 
         cursor.execute(
-            "DELETE FROM tasks WHERE id=? AND user_id=?",
+            "DELETE FROM tasks WHERE id=%s AND user_id=%s",
             (id, session["user_id"])
         )
         conn.commit()
@@ -270,11 +148,11 @@ def delete(id):
 def update(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     if request.method == "GET":
         cursor.execute(
-            "SELECT * FROM tasks WHERE id=? AND user_id=?", 
+            "SELECT * FROM tasks WHERE id=%s AND user_id=%s", 
             (id,session["user_id"])
         )
         task = cursor.fetchone()
@@ -286,7 +164,7 @@ def update(id):
     else:
         new_task = request.form["task"]
         cursor.execute(
-            "UPDATE tasks SET task=? WHERE id=?  AND user_id=?",
+            "UPDATE tasks SET task=%s WHERE id=%s  AND user_id=%s",
             (new_task, id,session["user_id"])
         )
         conn.commit()
@@ -296,11 +174,11 @@ def update(id):
 @app.route("/status/<int:id>",methods=["POST"])
 def status(id):
     if "username" in session:
-        conn = sqlite3.connect("database.db")   # THIS IS TO CHECK IF PROJECT IS COMPLETED OR PENDING
+        conn = get_connection()   # THIS IS TO CHECK IF PROJECT IS COMPLETED OR PENDING
         cursor = conn.cursor()
 
         cursor.execute(
-            " UPDATE tasks SET status=1 WHERE id=? AND user_id=?",
+            " UPDATE tasks SET status=1 WHERE id=%s AND user_id=%s",
             (id,session["user_id"])
         )
         conn.commit()      
@@ -322,17 +200,17 @@ def register():
         if password != confirm_password:
             return render_template( "register.html", error="Passwords do not match.")
         hashed_password = generate_password_hash(password)
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute(
-        " SELECT * FROM users WHERE username=?",
+        " SELECT * FROM users WHERE username=%s",
         (user,)
         )
         existing_user = cursor.fetchone()
         if existing_user is None:
             cursor.execute(
-                "INSERT INTO users(username,password) VALUES(?,?)",
+                "INSERT INTO users(username,password) VALUES(%s,%s)",
             (user,hashed_password))
         else:
             conn.close()
@@ -351,11 +229,11 @@ def login():
     else:
         user=request.form["username"]
         password=request.form["password"]
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute(
-            "SELECT * FROM users WHERE username=?",
+            "SELECT * FROM users WHERE username=%s",
             (user,)
         )
         existing_user = cursor.fetchone()
@@ -379,10 +257,10 @@ def logout():
 @app.route("/assignments")
 def assignments():
     if "username" in session:
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM assignments WHERE user_id=?",
+            "SELECT * FROM assignments WHERE user_id=%s",
             (session["user_id"],)
         )
         assig = cursor.fetchall()
@@ -394,14 +272,14 @@ def assignments():
 @app.route("/add_assignments",methods=["POST"])
 def add_assignments():
     if "username" in session:
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
         add_assignment_name = request.form["assignment_name"]
         add_subject = request.form["subject"]
         add_due_date = request.form["due_date"]
         add_priority = int(request.form["priority"])
         cursor.execute(
-            "INSERT INTO assignments(assignment_name, subject, due_date, priority, user_id)VALUES(?,?,?,?,?)", 
+            "INSERT INTO assignments(assignment_name, subject, due_date, priority, user_id)VALUES(%s,%s,%s,%s,%s)", 
             (add_assignment_name, add_subject, add_due_date,add_priority, session["user_id"])
         )
         conn.commit()
@@ -414,11 +292,11 @@ def add_assignments():
 def update_assignments(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     if request.method == "GET":
         cursor.execute(
-            "SELECT * FROM assignments WHERE id=? AND user_id=?", 
+            "SELECT * FROM assignments WHERE id=%s AND user_id=%s", 
             (id,session["user_id"])
         )
         assig = cursor.fetchone()
@@ -433,7 +311,7 @@ def update_assignments(id):
         new_due_date = request.form["due_date"]
         new_priority = int(request.form["priority"])
         cursor.execute(
-            "UPDATE assignments SET assignment_name=?, subject=?, due_date=?, priority=? WHERE id=? AND user_id=?",
+            "UPDATE assignments SET assignment_name=%s, subject=%s, due_date=%s, priority=%s WHERE id=%s AND user_id=%s",
             (new_assignment_name, new_subject, new_due_date, new_priority, id, session["user_id"])
         )
         conn.commit()
@@ -444,10 +322,10 @@ def update_assignments(id):
 def delete_assignments(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()  
     cursor.execute(
-        "DELETE FROM assignments WHERE id=? AND user_id=?",
+        "DELETE FROM assignments WHERE id=%s AND user_id=%s",
         (id, session["user_id"])
     )
     conn.commit()
@@ -458,10 +336,10 @@ def delete_assignments(id):
 def status_assignments(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db") 
+    conn = get_connection() 
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE assignments SET status=1 WHERE id=? AND user_id=?",
+        "UPDATE assignments SET status=1 WHERE id=%s AND user_id=%s",
         (id,session["user_id"])
     )
     conn.commit()      
@@ -472,10 +350,10 @@ def status_assignments(id):
 def grades():
     if "username" not in session:
         return redirect("/login") 
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT * FROM semesters WHERE user_id=?",
+        "SELECT * FROM semesters WHERE user_id=%s",
         (session["user_id"],)
     )
     grade = cursor.fetchall()
@@ -485,7 +363,7 @@ def grades():
     for semester in grade:
         semester_id = semester[0]
         cursor.execute(
-            "SELECT * FROM subjects WHERE semester_id=?",
+            "SELECT * FROM subjects WHERE semester_id=%s",
             (semester_id,)
         )
         subjects=cursor.fetchall()
@@ -514,16 +392,16 @@ def grades():
 def add_semester():
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
-    add_semester_no = request.form["semester_no"]
+    add_semester_no = int(request.form["semester_no"])
     cursor.execute(
-        " SELECT * FROM semesters WHERE semester_no=? AND user_id=?",
+        " SELECT * FROM semesters WHERE semester_no=%s AND user_id=%s",
         (add_semester_no,session["user_id"])
     )
     existing_semester_no=cursor.fetchone()
     cursor.execute(   # to make user select only semester 3 after semester 2
-        "SELECT MAX(semester_no) FROM semesters WHERE user_id=?", 
+        "SELECT MAX(semester_no) FROM semesters WHERE user_id=%s", 
         (session["user_id"],)
     )
     result = cursor.fetchone()
@@ -534,7 +412,7 @@ def add_semester():
 
     if existing_semester_no: # checking for duplicates 
         cursor.execute(
-            "SELECT * FROM semesters WHERE user_id=?",
+            "SELECT * FROM semesters WHERE user_id=%s",
             (session["user_id"],)
         )
         grade = cursor.fetchall()
@@ -544,7 +422,7 @@ def add_semester():
     
     if int(add_semester_no) != max_semester + 1: # to allow only sem3 after sem2 using this
         cursor.execute(
-            "SELECT * FROM semesters WHERE user_id=?",
+            "SELECT * FROM semesters WHERE user_id=%s",
             (session["user_id"],)
         )
         grade = cursor.fetchall()
@@ -554,7 +432,7 @@ def add_semester():
     
     else:    
         cursor.execute(
-            "INSERT INTO semesters(semester_no,user_id)VALUES(?,?)", 
+            "INSERT INTO semesters(semester_no,user_id)VALUES(%s,%s)", 
             (add_semester_no, session["user_id"])
         )
     conn.commit()      
@@ -565,10 +443,10 @@ def add_semester():
 def add_subject(semester_id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id FROM semesters WHERE id=? AND user_id=?",
+        "SELECT id FROM semesters WHERE id=%s AND user_id=%s",
         (semester_id, session["user_id"])
     )
     semester = cursor.fetchone()
@@ -579,13 +457,13 @@ def add_subject(semester_id):
     if request.method == "GET":
         return render_template("add_subject.html",semester_id=semester_id)
     if request.method == "POST":
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
         add_subject_name = request.form["subject_name"]
         add_grade = int(request.form["grade"])
         add_credits = int(request.form["credits"])
         cursor.execute(
-            "INSERT INTO subjects(subject_name, grade, credits, user_id, semester_id)VALUES(?,?,?,?,?)", 
+            "INSERT INTO subjects(subject_name, grade, credits, user_id, semester_id)VALUES(%s,%s,%s,%s,%s)", 
             (add_subject_name, add_grade, add_credits, session["user_id"],semester_id)
         )
         conn.commit()
@@ -596,10 +474,10 @@ def add_subject(semester_id):
 def delete_subjects(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()  
     cursor.execute(
-        "DELETE FROM subjects WHERE id=? AND user_id=?",
+        "DELETE FROM subjects WHERE id=%s AND user_id=%s",
         (id, session["user_id"])
     )
     conn.commit()
@@ -610,11 +488,11 @@ def delete_subjects(id):
 def update_subjects(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     if request.method == "GET":
         cursor.execute(
-            "SELECT * FROM subjects WHERE id=? AND user_id=?", 
+            "SELECT * FROM subjects WHERE id=%s AND user_id=%s", 
             (id,session["user_id"])
         )
         subject = cursor.fetchone()
@@ -628,7 +506,7 @@ def update_subjects(id):
         new_credits = int(request.form["credits"])
         new_grade = int(request.form["grade"])
         cursor.execute(
-            "UPDATE subjects SET subject_name=?, credits=?, grade=? WHERE id=? AND user_id=?",
+            "UPDATE subjects SET subject_name=%s, credits=%s, grade=%s WHERE id=%s AND user_id=%s",
             (new_subject_name, new_credits, new_grade, id, session["user_id"])
         )
         conn.commit()
@@ -639,10 +517,10 @@ def update_subjects(id):
 def delete_semester(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT semester_no FROM semesters WHERE id=? AND user_id=?", 
+        "SELECT semester_no FROM semesters WHERE id=%s AND user_id=%s", 
         (id,session["user_id"])
     )
     semester = cursor.fetchone()
@@ -652,17 +530,17 @@ def delete_semester(id):
         return redirect("/grades")
     deleting_semester = semester[0]
     cursor.execute(
-        "SELECT MAX(semester_no) FROM semesters WHERE user_id=?", 
+        "SELECT MAX(semester_no) FROM semesters WHERE user_id=%s", 
         (session["user_id"],)
     )
     maximum_semester = cursor.fetchone()[0]
     if maximum_semester == deleting_semester:
         cursor.execute(
-            "DELETE FROM subjects WHERE user_id=? AND semester_id=?",
+            "DELETE FROM subjects WHERE user_id=%s AND semester_id=%s",
             (session["user_id"], id)
         )
         cursor.execute(
-            "DELETE FROM semesters WHERE user_id=? AND id=?",
+            "DELETE FROM semesters WHERE user_id=%s AND id=%s",
             (session["user_id"], id)
         )
         conn.commit()
@@ -678,10 +556,10 @@ def delete_semester(id):
 def confirm_delete(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT semester_no FROM semesters WHERE id=? AND user_id=?",
+        "SELECT semester_no FROM semesters WHERE id=%s AND user_id=%s",
         (id, session["user_id"])
     )
     semester = cursor.fetchone()
@@ -695,10 +573,10 @@ def confirm_delete(id):
 def timetable():
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        """SELECT * FROM semesters WHERE user_id=? ORDER BY semester_no DESC LIMIT 1 """,
+        """SELECT * FROM semesters WHERE user_id=%s ORDER BY semester_no DESC LIMIT 1 """,
         (session["user_id"],)
     )
     semester = cursor.fetchone()
@@ -707,7 +585,7 @@ def timetable():
         return render_template("timetable.html",semesters=None,message=message) 
     grouped_timetable = { 1: [], 2: [], 3: [], 4: [], 5: [] } # 1-> monday
     cursor.execute(
-        "SELECT * FROM timetable WHERE semester_id=?",
+        "SELECT * FROM timetable WHERE semester_id=%s",
         (semester[0],)
     )
     timetable_entries = cursor.fetchall()
@@ -721,10 +599,10 @@ def timetable():
 def add_class(semester_id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id FROM semesters WHERE id=? AND user_id=?",
+        "SELECT id FROM semesters WHERE id=%s AND user_id=%s",
         (semester_id, session["user_id"])
     )
     semester = cursor.fetchone()
@@ -733,10 +611,9 @@ def add_class(semester_id):
         flash("Invalid semester.", "error")
         return redirect("/grades")
     if request.method == "GET":
+        conn.close()
         return render_template("add_class.html",semester_id=semester_id)
     if request.method == "POST":
-        conn = sqlite3.connect("database.db")
-        cursor = conn.cursor()
         subject = request.form["subject"]
         end_time = request.form["end_time"]
         start_time = request.form["start_time"]
@@ -745,7 +622,7 @@ def add_class(semester_id):
             error = "End time must be later than start time"
             return render_template("add_class.html",semester_id=semester_id,error=error)
         cursor.execute(
-            """SELECT * FROM timetable WHERE semester_id=? AND day=? AND ( start_time < ? AND end_time > ?)""",
+            """SELECT * FROM timetable WHERE semester_id=%s AND day=%s AND ( start_time < %s AND end_time > %s)""",
                 (semester_id, day, end_time, start_time)
             )
         existing_slot = cursor.fetchone()
@@ -754,7 +631,7 @@ def add_class(semester_id):
             error = "Time slot already occupied"
             return render_template("add_class.html",semester_id=semester_id,error=error)
         cursor.execute(
-            "INSERT INTO timetable(subject_name, start_time, end_time, day, user_id, semester_id)VALUES(?,?,?,?,?,?)", 
+            "INSERT INTO timetable(subject_name, start_time, end_time, day, user_id, semester_id)VALUES(%s,%s,%s,%s,%s,%s)", 
             (subject, start_time, end_time, day, session["user_id"], semester_id)
         )
         conn.commit()
@@ -765,10 +642,10 @@ def add_class(semester_id):
 def delete_class(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "DELETE FROM timetable WHERE id=? AND user_id=?",
+        "DELETE FROM timetable WHERE id=%s AND user_id=%s",
         (id, session["user_id"])
     )
     conn.commit()
@@ -779,11 +656,11 @@ def delete_class(id):
 def update_class(id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     if request.method == "GET":
         cursor.execute(
-            "SELECT * FROM timetable WHERE id=? AND user_id=?",
+            "SELECT * FROM timetable WHERE id=%s AND user_id=%s",
             (id, session["user_id"])
         )
         entry = cursor.fetchone()      
@@ -795,14 +672,14 @@ def update_class(id):
         return render_template("update_class.html",entry=entry)
     
     if request.method == "POST":
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
         subject = request.form["subject"]
         end_time = request.form["end_time"]
         start_time = request.form["start_time"]
         day=int(request.form["day"])
         cursor.execute(
-            "SELECT * FROM timetable WHERE id=? AND user_id=?",
+            "SELECT * FROM timetable WHERE id=%s AND user_id=%s",
             (id, session["user_id"])
         )
         entry = cursor.fetchone()
@@ -811,7 +688,7 @@ def update_class(id):
             error = "End time must be later than start time"
             return render_template("update_class.html",semester_id=semester_id,error=error,entry=entry)
         cursor.execute(
-            """SELECT * FROM timetable WHERE semester_id=? AND day=? AND id!=? AND ( start_time < ? AND end_time > ?)""",
+            """SELECT * FROM timetable WHERE semester_id=%s AND day=%s AND id!=%s AND ( start_time < %s AND end_time > %s)""",
                 (semester_id, day, id, end_time, start_time)
             )
         existing_slot = cursor.fetchone()
@@ -820,7 +697,7 @@ def update_class(id):
             error = "Time slot already occupied"
             return render_template("update_class.html",semester_id=semester_id,error=error,entry=entry)
         cursor.execute(
-            "UPDATE timetable SET subject_name=?, day=?, start_time=?, end_time=? WHERE id=? AND user_id=?",
+            "UPDATE timetable SET subject_name=%s, day=%s, start_time=%s, end_time=%s WHERE id=%s AND user_id=%s",
             (subject, day, start_time, end_time, id, session["user_id"])
         )
         conn.commit()
@@ -831,15 +708,15 @@ def update_class(id):
 def dashboard():
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT COUNT(*) FROM semesters WHERE user_id=?",
+        "SELECT COUNT(*) FROM semesters WHERE user_id=%s",
         (session["user_id"],)
     )
     semester_count = cursor.fetchone()[0]
     cursor.execute(
-        "SELECT COUNT(*) FROM subjects WHERE user_id=?",
+        "SELECT COUNT(*) FROM subjects WHERE user_id=%s",
         (session["user_id"],)
     )
     subject_count = cursor.fetchone()[0]
@@ -860,7 +737,7 @@ def dashboard():
         today_classes_count=0
     else:
         cursor.execute(
-            "SELECT COUNT(*) FROM timetable WHERE semester_id=? AND day=? AND user_id=?",
+            "SELECT COUNT(*) FROM timetable WHERE semester_id=%s AND day=%s AND user_id=%s",
             (current_semester,today_day,session["user_id"])
         )
         today_classes_count = cursor.fetchone()[0]
@@ -904,10 +781,10 @@ def attendance():
     if "username" not in session:
         return redirect("/login")
     if request.method == "GET":
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM semesters WHERE user_id=? ORDER BY semester_no DESC LIMIT 1", 
+            "SELECT * FROM semesters WHERE user_id=%s ORDER BY semester_no DESC LIMIT 1", 
             (session["user_id"],)
         )
         existing_semester = cursor.fetchone()
@@ -919,7 +796,7 @@ def attendance():
         if today_day >=6:
             message = "No classes scheduled today."
         cursor.execute(
-            "SELECT * FROM timetable WHERE semester_id=? AND day=? AND user_id=?",
+            "SELECT * FROM timetable WHERE semester_id=%s AND day=%s AND user_id=%s",
             (current_semester,today_day,session["user_id"])
         )
         today_classes = cursor.fetchall()
@@ -928,7 +805,7 @@ def attendance():
         for class_item in today_classes:
             timetable_id = class_item[0]
             cursor.execute("""
-                SELECT status FROM attendance WHERE timetable_id=? AND date=? AND user_id=?""",
+                SELECT status FROM attendance WHERE timetable_id=%s AND date=%s AND user_id=%s""",
                 (timetable_id, today_date, session["user_id"])
             )
             record = cursor.fetchone()
@@ -939,7 +816,7 @@ def attendance():
             FROM attendance
             JOIN timetable
             ON attendance.timetable_id = timetable.id
-            WHERE attendance.user_id = ? AND timetable.semester_id = ?
+            WHERE attendance.user_id = %s AND timetable.semester_id = %s
             GROUP BY timetable.subject_name""",
              (session["user_id"], current_semester)
         )
@@ -958,10 +835,10 @@ def attendance():
         conn.close()
         return render_template("attendance.html",today_classes=today_classes, attendance_status=attendance_status,message=message, attendance_data=attendance_data)
     if request.method == "POST":
-        conn = sqlite3.connect("database.db")
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM semesters WHERE user_id=? ORDER BY semester_no DESC LIMIT 1", 
+            "SELECT * FROM semesters WHERE user_id=%s ORDER BY semester_no DESC LIMIT 1", 
             (session["user_id"],)
         )
         existing_semester = cursor.fetchone()
@@ -978,18 +855,18 @@ def attendance():
         for timetable_id in request.form:
             status = request.form[timetable_id]
             cursor.execute(
-                "SELECT * FROM attendance WHERE timetable_id=? AND date=? AND user_id=?",
+                "SELECT * FROM attendance WHERE timetable_id=%s AND date=%s AND user_id=%s",
                 (timetable_id,today_date,session["user_id"])
             )
             entry = cursor.fetchone()
             if entry:
                 cursor.execute(
-                    "UPDATE attendance SET status=? WHERE timetable_id=? AND date=? AND user_id=?",
+                    "UPDATE attendance SET status=%s WHERE timetable_id=%s AND date=%s AND user_id=%s",
                     (status, timetable_id, today_date, session["user_id"])
                 )
             else:
                 cursor.execute(
-                    "INSERT INTO attendance(timetable_id,date,status,user_id) VALUES(?,?,?,?)",
+                    "INSERT INTO attendance(timetable_id,date,status,user_id) VALUES(%s,%s,%s,%s)",
                    (timetable_id, today_date, status, session["user_id"])
                 )
         conn.commit()
@@ -1000,7 +877,7 @@ def attendance():
 def analytics():
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     penalty = 0
     reasons = []
@@ -1049,18 +926,18 @@ def analytics():
 def notes():
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     search_text = request.args.get("search")
     subject_filter = request.args.get("subject")
-    query = "SELECT * FROM notes WHERE user_id=?"
+    query = "SELECT * FROM notes WHERE user_id=%s"
     params = [session["user_id"]]
     if search_text:
-        query += """ AND ( file_name LIKE ? OR extracted_text LIKE ? )"""
+        query += """ AND ( file_name ILIKE %s OR extracted_text ILIKE %s )"""
         params.append("%" + search_text + "%")
         params.append("%" + search_text + "%")
     if subject_filter:
-        query += " AND subject=?"        # to  show all files regarding that particular subject so basucally we are filtering
+        query += " AND subject=%s"        # to  show all files regarding that particular subject so basucally we are filtering
         params.append(subject_filter)    # we are ensuring that unit1,unit2 --> filenames will be shown if daa sub is pressed
     cursor.execute(query, params)
     notes = cursor.fetchall()
@@ -1075,7 +952,7 @@ def notes():
         ranked_notes.append( (note, found_in))
 
     cursor.execute(
-        "SELECT DISTINCT subject_name FROM timetable WHERE user_id=?", # in dropdown we are showing subjects right 
+        "SELECT DISTINCT subject_name FROM timetable WHERE user_id=%s", # in dropdown we are showing subjects right 
         (session["user_id"],)    # we are taking from timetable so automatically that sems subjects and prev sems should be shown
     )
     subjects = cursor.fetchall()
@@ -1143,11 +1020,11 @@ def upload():
         except Exception as e:
             print("PPTX Extraction Error:", e)
 
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
         """ INSERT into notes(file_name,file_path,file_type,file_size,subject,extracted_text,user_id) 
-        VALUES(?,?,?,?,?,?,?)
+        VALUES(%s,%s,%s,%s,%s,%s,%s)
         """,
         (new_filename,file_path,file_type,file_size,subject,extracted_text,session["user_id"])
     )
@@ -1159,10 +1036,10 @@ def upload():
 def open_note(note_id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT file_path FROM notes WHERE id=? AND user_id=?",
+        "SELECT file_path FROM notes WHERE id=%s AND user_id=%s",
         (note_id,session["user_id"])
     )
     note = cursor.fetchone()
@@ -1179,10 +1056,10 @@ def open_note(note_id):
 def delete_note(note_id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT file_path FROM notes WHERE id=? AND user_id=?",
+        "SELECT file_path FROM notes WHERE id=%s AND user_id=%s",
         (note_id,session["user_id"])
     )
     note=cursor.fetchone()
@@ -1194,7 +1071,7 @@ def delete_note(note_id):
     if os.path.exists(file_path):   # removing from uploads/motes
         os.remove(file_path)
     cursor.execute(
-        "DELETE FROM notes WHERE id=? AND user_id=?",  # removing from database
+        "DELETE FROM notes WHERE id=%s AND user_id=%s",  # removing from database
         (note_id,session["user_id"])
     )
     conn.commit()
@@ -1205,10 +1082,10 @@ def delete_note(note_id):
 def download_note(note_id):
     if "username" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT file_path FROM notes WHERE id=? AND user_id=?",
+        "SELECT file_path FROM notes WHERE id=%s AND user_id=%s",
         (note_id,session["user_id"])
     )
     note = cursor.fetchone()

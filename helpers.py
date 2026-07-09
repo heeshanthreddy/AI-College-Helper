@@ -2,14 +2,15 @@ import sqlite3
 from datetime import datetime, date
 import math, re, json
 from config import STOP_WORDS
+from db import get_connection
 
 def get_cgpa(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     overall_points = 0
     overall_credits = 0
     cursor.execute(
-        "SELECT id FROM semesters WHERE user_id=?",
+        "SELECT id FROM semesters WHERE user_id=%s",
         (user_id,)
     )
     semesters = cursor.fetchall()
@@ -19,7 +20,7 @@ def get_cgpa(user_id):
             """
             SELECT credits, grade
             FROM subjects
-            WHERE semester_id=?
+            WHERE semester_id=%s
             """,
             (semester_id,)
         )
@@ -33,10 +34,10 @@ def get_cgpa(user_id):
     return round(overall_points / overall_credits, 2)
 
 def get_current_semester(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT * FROM semesters WHERE user_id=? ORDER BY semester_no DESC LIMIT 1", 
+        "SELECT * FROM semesters WHERE user_id=%s ORDER BY semester_no DESC LIMIT 1", 
         (user_id,)
     )
     existing_semester = cursor.fetchone()
@@ -47,22 +48,22 @@ def get_current_semester(user_id):
     return { "semester_id": current_semester, "semester_no": current_semester_no }
 
 def get_task_stats(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT COUNT(*) FROM tasks WHERE user_id=?",
+        "SELECT COUNT(*) FROM tasks WHERE user_id=%s",
         (user_id,)
     )
     total_tasks = cursor.fetchone()[0]
 
     cursor.execute(
-        "SELECT COUNT(*) FROM tasks WHERE user_id=? AND status=0",
+        "SELECT COUNT(*) FROM tasks WHERE user_id=%s AND status=0",
         (user_id,)
     )
     pending_tasks = cursor.fetchone()[0]
 
     cursor.execute(
-        "SELECT COUNT(*) FROM tasks WHERE user_id=? AND status=1",
+        "SELECT COUNT(*) FROM tasks WHERE user_id=%s AND status=1",
         (user_id,)
     )
     completed_tasks = cursor.fetchone()[0]
@@ -89,20 +90,20 @@ def get_task_stats(user_id):
     return { "total_tasks": total_tasks, "pending_tasks": pending_tasks, "completed_tasks": completed_tasks , "completion_rate": completion_rate,"task_message": task_message,"task_score": task_score, "all_completed": pending_tasks == 0 }
 
 def get_assignment_stats(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        """SELECT assignment_name, subject, due_date, priority FROM assignments WHERE user_id=? AND status=0 """,
+        """SELECT assignment_name, subject, due_date, priority FROM assignments WHERE user_id=%s AND status=0 """,
         (user_id,)
     )
     pending_assignments = cursor.fetchall()
     cursor.execute(
-        """SELECT COUNT(*) FROM assignments WHERE user_id=? AND status=1 """,
+        """SELECT COUNT(*) FROM assignments WHERE user_id=%s AND status=1 """,
         (user_id,)
     )
     completed_assignments = cursor.fetchone()[0]
     cursor.execute(
-        """SELECT COUNT(*) FROM assignments WHERE user_id=?  """,
+        """SELECT COUNT(*) FROM assignments WHERE user_id=%s  """,
         (user_id,)
     )
     total_assignments = cursor.fetchone()[0]
@@ -113,7 +114,7 @@ def get_assignment_stats(user_id):
     for item in pending_assignments:
         assignment_name = item[0]
         subject = item[1]
-        due_date = datetime.strptime( item[2], "%Y-%m-%d" ).date()
+        due_date = item[2]
         priority = item[3]
         days_left = (due_date - today).days
         if days_left < 0:
@@ -138,7 +139,7 @@ def get_assignment_stats(user_id):
     return { "pending_assignments": pending_assignments_count, "completed_assignments": completed_assignments, "total_assignments": total_assignments, "assignment_analytics": assignment_analytics, "assignment_penalty": assignment_penalty, "overdue_count": overdue_count,"assignment_score": assignment_score }
 
 def get_attendance_stats(user_id, semester_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
     """ SELECT timetable.subject_name,
@@ -148,7 +149,7 @@ def get_attendance_stats(user_id, semester_id):
         FROM attendance
         JOIN timetable
         ON attendance.timetable_id = timetable.id
-        WHERE attendance.user_id = ? AND timetable.semester_id = ?
+        WHERE attendance.user_id = %s AND timetable.semester_id = %s
         GROUP BY timetable.subject_name """,
         (user_id, semester_id)
     )
@@ -208,13 +209,13 @@ def get_student_context(user_id):
     return { "semester": semester, "task_stats": task_stats, "assignment_stats": assignment_stats, "attendance_stats": attendance_stats, "productivity_score": productivity_score, "health": health }
 
 def get_productivity_history(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
         """
         SELECT score, record_date, user_id
         FROM productivity_history
-        WHERE user_id=?
+        WHERE user_id=%s
         ORDER BY record_date
         """,
         (user_id,)
@@ -229,14 +230,14 @@ def get_productivity_history(user_id):
     return { "dates": dates, "scores": scores }
 
 def update_productivity_history(user_id, productivity_score):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     today = date.today()
     cursor.execute(
         """
         SELECT id
         FROM productivity_history
-        WHERE user_id=? AND record_date=?
+        WHERE user_id=%s AND record_date=%s
         """,
         (user_id, today)
     )
@@ -246,7 +247,7 @@ def update_productivity_history(user_id, productivity_score):
             """
             INSERT INTO productivity_history
             (user_id, score, record_date)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
             """,
             (user_id, productivity_score, date.today())
         )
@@ -254,8 +255,8 @@ def update_productivity_history(user_id, productivity_score):
         cursor.execute(
             """
             UPDATE productivity_history
-            SET score=?
-            WHERE user_id=? AND record_date=?
+            SET score=%s
+            WHERE user_id=%s AND record_date=%s
             """,
             ( productivity_score, user_id, today )
         )
@@ -263,12 +264,12 @@ def update_productivity_history(user_id, productivity_score):
     conn.close() 
 def get_today_timetable(user_id, semester_id):
     today_day = datetime.now().weekday() + 1
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
     """SELECT subject_name, start_time, end_time
         FROM timetable
-        WHERE user_id=? AND semester_id=? AND day=?
+        WHERE user_id=%s AND semester_id=%s AND day=%s
         ORDER BY start_time """,
         (user_id, semester_id, today_day)
     )
@@ -280,12 +281,12 @@ def get_today_timetable(user_id, semester_id):
     return today_classes
 
 def get_today_tasks(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         SELECT task
         FROM tasks
-        WHERE user_id=? AND status=0
+        WHERE user_id=%s AND status=0
         LIMIT 5
     """,
     (user_id,))
@@ -297,12 +298,12 @@ def get_today_tasks(user_id):
     return today_tasks
 
 def get_notes_context(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
         """SELECT subject, extracted_text
             FROM notes
-            WHERE user_id=?
+            WHERE user_id=%s
         """,
         (user_id,)
     )
@@ -320,12 +321,12 @@ def get_notes_context(user_id):
     return { "notes": notes_summary, "total_notes": len(notes_summary) }
 
 def get_today_assignments(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
         """ SELECT assignment_name, subject, due_date, priority
         FROM assignments
-        WHERE user_id=?
+        WHERE user_id=%s
         AND status=0
         ORDER BY due_date ASC, priority DESC
         LIMIT 5""", 
@@ -335,7 +336,7 @@ def get_today_assignments(user_id):
     today = date.today()
     assignments = []
     for row in rows:
-        due_date = datetime.strptime(row[2], "%Y-%m-%d").date()
+        due_date = row[2]
         days_left = (due_date - today).days
         assignments.append({
             "assignment": row[0],
@@ -423,14 +424,14 @@ def get_planner_context(user_id):
         return None
     today = datetime.now().strftime("%A")
     today_day = datetime.now().weekday() + 1
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
         """
             SELECT subject_name, start_time, end_time
             FROM timetable
-            WHERE user_id=? AND semester_id=? AND day=?
+            WHERE user_id=%s AND semester_id=%s AND day=%s
             ORDER BY start_time
         """,
         ( user_id, semester["semester_id"], today_day)
@@ -477,10 +478,10 @@ def calculate_free_slots(classes):
     return free_slots
 
 def get_note_text(note_id,user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, subject, file_name, extracted_text FROM notes WHERE id=? AND user_id=? ",
+        "SELECT id, subject, file_name, extracted_text FROM notes WHERE id=%s AND user_id=%s ",
         (note_id,user_id)
         )
     details = cursor.fetchone()
@@ -490,10 +491,10 @@ def get_note_text(note_id,user_id):
     return { "id": details[0], "subject": details[1], "file_name": details[2], "text": details[3] }
 
 def get_summary(note_id, user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT summary_json FROM notes WHERE id=? AND user_id=?",
+        "SELECT summary_json FROM notes WHERE id=%s AND user_id=%s",
         (note_id, user_id)
     )
     row = cursor.fetchone()
@@ -503,10 +504,10 @@ def get_summary(note_id, user_id):
     return row[0]
 
 def save_summary(note_id, user_id, summary):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE notes SET summary_json=? WHERE id=? AND user_id=?", 
+        "UPDATE notes SET summary_json=%s WHERE id=%s AND user_id=%s", 
         (json.dumps(summary),note_id,user_id)
     )
     conn.commit()
@@ -514,11 +515,11 @@ def save_summary(note_id, user_id, summary):
 
 def get_ai_report(user_id, report_type):
 
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT report_json FROM ai_reports WHERE user_id=? AND report_type=? ",
+        "SELECT report_json FROM ai_reports WHERE user_id=%s AND report_type=%s ",
         (user_id,report_type)
     )
     row = cursor.fetchone()
@@ -528,31 +529,31 @@ def get_ai_report(user_id, report_type):
     return row[0]
 
 def save_ai_report(user_id, report_type, report):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id FROM ai_reports WHERE user_id=? AND report_type=?",
+        "SELECT id FROM ai_reports WHERE user_id=%s AND report_type=%s",
         (user_id,report_type)
     )
     exists = cursor.fetchone()
     if exists:
         cursor.execute(
-            "UPDATE ai_reports SET report_json=?, generated_at=CURRENT_TIMESTAMP WHERE user_id=? AND report_type=?",
+            "UPDATE ai_reports SET report_json=%s, generated_at=CURRENT_TIMESTAMP WHERE user_id=%s AND report_type=%s",
             (json.dumps(report),user_id,report_type)
         )
     else:
         cursor.execute(
-            "INSERT INTO ai_reports(user_id,report_type,report_json) VALUES(?, ?, ?)",
+            "INSERT INTO ai_reports(user_id,report_type,report_json) VALUES(%s, %s, %s)",
             (user_id,report_type,json.dumps(report))
         )
     conn.commit()
     conn.close()
 
 def get_study_plan(user_id):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT plan_json FROM study_plans WHERE user_id=?",
+        "SELECT plan_json FROM study_plans WHERE user_id=%s",
         (user_id,)
     )
     row = cursor.fetchone()
@@ -562,21 +563,21 @@ def get_study_plan(user_id):
     return row[0]
 
 def save_study_plan(user_id, plan):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id FROM study_plans WHERE user_id=?",
+        "SELECT id FROM study_plans WHERE user_id=%s",
         (user_id,)
     )
     exists = cursor.fetchone()
     if exists:
         cursor.execute(
-            "UPDATE study_plans SET plan_json=?, generated_at=CURRENT_TIMESTAMP WHERE user_id=?",
+            "UPDATE study_plans SET plan_json=%s, generated_at=CURRENT_TIMESTAMP WHERE user_id=%s",
             (json.dumps(plan), user_id)
         )
     else:
         cursor.execute(
-            " INSERT INTO study_plans(user_id, plan_json) VALUES(?, ?)",
+            " INSERT INTO study_plans(user_id, plan_json) VALUES(%s, %s)",
             (user_id, json.dumps(plan))
         )
     conn.commit()
@@ -621,10 +622,10 @@ def extract_chunk(text, keywords):
 
 def retrieve_relevant_notes(user_id, question):
     keywords = extract_keywords(question)
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT file_name, extracted_text FROM notes WHERE user_id=? ",
+        "SELECT file_name, extracted_text FROM notes WHERE user_id=%s ",
         (user_id,)
     )
     notes = cursor.fetchall()
